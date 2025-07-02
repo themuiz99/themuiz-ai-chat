@@ -72,8 +72,8 @@
   <script>
     const chatBox = document.getElementById('chat-box');
     const input = document.getElementById('user-input');
-    // API Key will be automatically provided by the system
-    const apiKey = ""; 
+    // API Key ที่คุณให้มา
+    const apiKey = "AIzaSyC5csGWz38EI5Z7gpM-Dp9WixcdldkXRnY"; 
 
     // Function to parse Markdown bold syntax (**text** or *text*) to HTML <strong>
     function parseMarkdownBold(text) {
@@ -84,11 +84,23 @@
       return parsedText;
     }
 
-    // Function to clean text for speech (remove Markdown asterisks)
+    // Function to clean text for speech (remove Markdown asterisks and other special characters)
     function cleanTextForSpeech(text) {
-      // Remove all asterisks used for Markdown bolding
-      // This regex handles both ** and *
-      return text.replace(/\*\*|\*/g, '');
+      let cleanedText = text;
+      // Remove markdown bold/italic markers (**text**, *text*, _text_)
+      cleanedText = cleanedText.replace(/(\*\*|__)(.*?)\1/g, '$2'); // For **bold** or __bold__
+      cleanedText = cleanedText.replace(/(\*|_)(.*?)\1/g, '$2');   // For *italic* or _italic_ (after handling bold)
+
+      // Remove specific special characters that might be vocalized or cause issues
+      // This includes quotes, hashtags, brackets, parentheses, colons, semicolons, etc.
+      // Keep periods, commas, question marks, exclamation marks as they usually aid natural speech pauses.
+      cleanedText = cleanedText.replace(/[#"\[\]\(\):;]/g, ''); // Remove #, ", [, ], (, ), :, ;
+      cleanedText = cleanedText.replace(/'/g, ''); // Remove single quotes specifically
+
+      // Replace multiple spaces with a single space
+      cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+
+      return cleanedText;
     }
 
     // Function to append chat bubbles
@@ -111,7 +123,7 @@
         buttonContainer.className = 'flex gap-2 mt-2'; // Add margin top for spacing
 
         const playButton = document.createElement('button');
-        playButton.className = 'flex-shrink-0 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm transform active:scale-95';
+        playButton.className = 'flex-shrink-0 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm';
         playButton.innerHTML = '▶️ เล่นเสียง'; // Play icon and text
         playButton.title = 'เล่นเสียง'; // Tooltip for accessibility
 
@@ -147,7 +159,7 @@
         buttonContainer.appendChild(playButton);
 
         const copyButton = document.createElement('button');
-        copyButton.className = 'flex-shrink-0 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm transform active:scale-95';
+        copyButton.className = 'flex-shrink-0 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm';
         copyButton.innerHTML = '📋 คัดลอก'; // Copy icon and text
         copyButton.title = 'คัดลอกข้อความ'; // Tooltip for accessibility
 
@@ -238,12 +250,12 @@
           const botReply = result.candidates[0].content.parts[0].text;
           appendBubble(botReply, 'bot'); // Add bot's reply to chat
         } else {
-          appendBubble("ขออภัยค่ะ ไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง", 'bot'); // Fallback message
+          appendBubble("ขออภัยค่ะ ไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้งค่ะ", 'bot');
           console.error("Unexpected API response structure:", result);
         }
       } catch (error) {
         hideLoadingIndicator(); // Ensure loading indicator is hidden on error
-        appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง", 'bot');
+        appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรือ API Key แล้วลองใหม่อีกครั้งค่ะ", 'bot');
         console.error("Error fetching from API:", error);
       }
     }
@@ -274,4 +286,3 @@
   </script>
 </body>
 </html>
-
