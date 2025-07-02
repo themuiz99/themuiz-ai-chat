@@ -1,109 +1,103 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="="th">
 <head>
   <meta charset="UTF-8">
-  <title>AI Chatboard น่ารัก</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Themuiz AI Chat</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- ResponsiveVoice JS -->
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=Negu9VLC"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #fceabb, #f8b500);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
+    html, body {
+      height: 100%;
+      overflow: hidden;
     }
-
-    header {
-      background-color: #ff6f91;
-      color: white;
-      padding: 20px;
-      text-align: center;
-      font-size: 24px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    #chat-box {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .bubble {
-      padding: 12px 16px;
-      border-radius: 20px;
-      max-width: 70%;
-      line-height: 1.4;
-      word-wrap: break-word;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      animation: pop 0.3s ease-out;
-    }
-
     @keyframes pop {
       0% { transform: scale(0.9); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
-
-    .user {
-      background-color: #ffe0f0;
-      align-self: flex-end;
+    .animate-pop {
+      animation: pop 0.3s ease-out;
     }
-
-    .bot {
-      background-color: #ffffff;
-      align-self: flex-start;
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
     }
-
-    #input-area {
-      display: flex;
-      padding: 15px;
-      background-color: #fff5ee;
-      border-top: 1px solid #ccc;
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
-
-    input {
-      flex: 1;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 25px;
-      font-size: 16px;
-      outline: none;
-      background-color: #fff;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    button {
-      margin-left: 10px;
-      background-color: #ff85a2;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: #ff4f78;
+    .bubble strong {
+      font-size: 1.1em;
+      font-weight: 600;
     }
   </style>
 </head>
-<body>
-  <header>💬 AI Chatboard น่ารัก</header>
-  <div id="chat-box"></div>
-  <div id="input-area">
-    <input type="text" id="user-input" placeholder="พิมพ์ข้อความของมึงเลย...">
-    <button onclick="sendMessage()">ส่ง</button>
+<body class="font-inter bg-gray-950 text-gray-100 flex flex-col h-full antialiased">
+  <header class="bg-gray-900 text-white p-4 text-2xl md:text-3xl font-extrabold text-center shadow-lg rounded-b-xl">
+    <span class="text-blue-400">💬</span> Themuiz AI Chat
+  </header>
+  <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar"></div>
+  <div id="input-area" class="flex p-4 bg-gray-900 border-t border-gray-800 items-center gap-2 shadow-lg">
+    <input
+      type="text"
+      id="user-input"
+      placeholder="พิมพ์ข้อความของคุณ..."
+      class="flex-1 p-3 border border-gray-700 rounded-full text-base outline-none bg-gray-800 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+    >
+    <button
+      onclick="sendMessage()"
+      class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white p-3 rounded-full cursor-pointer font-semibold transition-colors duration-200 shadow-lg transform active:scale-95"
+    >
+      ส่ง
+    </button>
   </div>
 
   <script>
     const chatBox = document.getElementById('chat-box');
     const input = document.getElementById('user-input');
-    const API_KEY = "AIzaSyC5csGWz38EI5Z7gpM-Dp9WixcdldkXRnY";
+    const apiKey = ""; // ใส่ API Key ตรงนี้
+
+    function parseMarkdownBold(text) {
+      let parsedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      parsedText = parsedText.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+      return parsedText;
+    }
+
+    function appendBubble(text, type) {
+      const div = document.createElement('div');
+      div.className = `bubble ${type} p-3 rounded-xl max-w-[80%] break-words shadow-md animate-pop`;
+      if (type === 'user') {
+        div.classList.add('bg-blue-600', 'text-white', 'self-end', 'rounded-br-none');
+      } else if (type === 'bot') {
+        div.classList.add('bg-gray-800', 'text-gray-200', 'self-start', 'rounded-bl-none');
+      }
+      div.innerHTML = parseMarkdownBold(text); 
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    let loadingBubble = null;
+    function showLoadingIndicator() {
+      loadingBubble = document.createElement('div');
+      loadingBubble.className = 'bubble bot bg-gray-800 text-gray-400 self-start rounded-bl-none animate-pulse';
+      loadingBubble.innerHTML = 'กำลังคิด...';
+      chatBox.appendChild(loadingBubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function hideLoadingIndicator() {
+      if (loadingBubble) {
+        chatBox.removeChild(loadingBubble);
+        loadingBubble = null;
+      }
+    }
+
+    function speak(text) {
+      responsiveVoice.speak(text, "Thai Female");
+    }
 
     async function sendMessage() {
       const userText = input.value.trim();
@@ -111,34 +105,44 @@
 
       appendBubble(userText, 'user');
       input.value = '';
-      
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-goog-api-key': API_KEY
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: userText }]
-            }
-          ]
-        })
-      });
+      showLoadingIndicator();
 
-      const data = await res.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "โอ๊ะ! ตอบบ่ได้ ลองอีกเทื่อ!";
-      appendBubble(reply, 'bot');
+      try {
+        const chatHistory = [];
+        chatHistory.push({ role: "user", parts: [{ text: userText }] });
+        const payload = { contents: chatHistory };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        hideLoadingIndicator();
+
+        if (result.candidates && result.candidates.length > 0 &&
+            result.candidates[0].content && result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0) {
+          const botReply = result.candidates[0].content.parts[0].text;
+          appendBubble(botReply, 'bot');
+          speak(botReply);
+        } else {
+          appendBubble("โอ๊ะ! ตอบไม่ได้ ลองอีกครั้งนะคะ!", 'bot');
+        }
+      } catch (error) {
+        hideLoadingIndicator();
+        appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ ลองใหม่อีกครั้ง", 'bot');
+        console.error("Error:", error);
+      }
     }
 
-    function appendBubble(text, type) {
-      const div = document.createElement('div');
-      div.className = `bubble ${type}`;
-      div.textContent = text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    input.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    });
   </script>
 </body>
 </html>
