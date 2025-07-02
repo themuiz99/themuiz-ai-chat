@@ -28,12 +28,13 @@
   <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar"></div>
 
   <div id="input-area" class="flex p-4 bg-gray-900 border-t border-gray-800 items-center gap-2 shadow-lg">
-    <input
-      type="text"
+    <textarea
       id="user-input"
       placeholder="พิมพ์ข้อความของคุณ..."
-      class="flex-1 p-3 border border-gray-700 rounded-full text-base outline-none bg-gray-800 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-    >
+      class="flex-1 p-3 border border-gray-700 rounded-full text-base outline-none bg-gray-800 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition-all duration-200 resize-none"
+      rows="1"
+      style="min-height: 48px; max-height: 180px;"
+    ></textarea>
     <button
       onclick="sendMessage()"
       class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white p-3 rounded-full cursor-pointer font-semibold transition-colors duration-200 shadow-lg transform active:scale-95"
@@ -151,6 +152,8 @@
       if (!userText) return;
       appendBubble(userText, 'user');
       input.value = '';
+      // Auto-resize textarea
+      input.style.height = 'auto';
       showLoadingIndicator();
       try {
         const chatHistory = [];
@@ -179,13 +182,16 @@
         }
       } catch (error) {
         hideLoadingIndicator();
-        appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรือ API Key แล้วลองใหม่อีกครั้งค่ะ", 'bot');
+        appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้งค่ะ", 'bot');
         console.error("Error fetching from API:", error);
       }
     }
 
-    input.addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') sendMessage();
+    // ไม่ต้องมี event ที่กด Enter แล้วส่งข้อความ
+    // เพิ่ม auto-resize ให้ textarea
+    input.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
     });
 
     window.onload = function() {
