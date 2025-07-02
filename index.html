@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="="th">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +8,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- ResponsiveVoice JS -->
+  <!-- ResponsiveVoice JS for text-to-speech -->
   <script src="https://code.responsivevoice.org/responsivevoice.js?key=Negu9VLC"></script>
   <style>
+    /* Ensure html and body take full height and prevent main page scrolling */
     html, body {
-      height: 100%;
-      overflow: hidden;
+      height: 100%; /* Make html and body take full viewport height */
+      overflow: hidden; /* Prevent scrolling on the entire page */
     }
+
+    /* Custom animation for bubbles */
     @keyframes pop {
       0% { transform: scale(0.9); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
@@ -22,24 +25,35 @@
     .animate-pop {
       animation: pop 0.3s ease-out;
     }
+    /* Hide scrollbar for a cleaner look */
     .hide-scrollbar::-webkit-scrollbar {
       display: none;
     }
     .hide-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
     }
+    /* Custom style for strong tags to make text slightly larger */
     .bubble strong {
-      font-size: 1.1em;
-      font-weight: 600;
+      font-size: 1.1em; /* Makes the text 10% larger than its parent */
+      font-weight: 600; /* Ensure it's bold as well */
     }
   </style>
 </head>
 <body class="font-inter bg-gray-950 text-gray-100 flex flex-col h-full antialiased">
+  <!-- Changed min-h-screen to h-full and added overflow:hidden to body in style -->
+
+  <!-- Header Section -->
   <header class="bg-gray-900 text-white p-4 text-2xl md:text-3xl font-extrabold text-center shadow-lg rounded-b-xl">
     <span class="text-blue-400">💬</span> Themuiz AI Chat
   </header>
-  <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar"></div>
+
+  <!-- Chat Box Section -->
+  <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar">
+    <!-- Initial bot message - Removed as per request -->
+  </div>
+
+  <!-- Input Area Section -->
   <div id="input-area" class="flex p-4 bg-gray-900 border-t border-gray-800 items-center gap-2 shadow-lg">
     <input
       type="text"
@@ -58,36 +72,82 @@
   <script>
     const chatBox = document.getElementById('chat-box');
     const input = document.getElementById('user-input');
-    const apiKey = ""; // ใส่ API Key ตรงนี้
+    // API Key will be automatically provided by the system
+    const apiKey = ""; 
 
+    // Function to parse Markdown bold syntax (**text** or *text*) to HTML <strong>
     function parseMarkdownBold(text) {
-      let parsedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      parsedText = parsedText.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+      // Regex to find **text** or *text* and replace with <strong>text</strong>
+      // It handles cases where * or ** are escaped or used literally within words
+      let parsedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // For **bold**
+      parsedText = parsedText.replace(/\*(.*?)\*/g, '<strong>$1</strong>'); // For *bold*
       return parsedText;
     }
 
+    // Function to clean text for speech (remove Markdown asterisks)
+    function cleanTextForSpeech(text) {
+      // Remove all asterisks used for Markdown bolding
+      // This regex handles both ** and *
+      return text.replace(/\*\*|\*/g, '');
+    }
+
+    // Function to append chat bubbles
     function appendBubble(text, type) {
       const div = document.createElement('div');
       div.className = `bubble ${type} p-3 rounded-xl max-w-[80%] break-words shadow-md animate-pop`;
+      
       if (type === 'user') {
         div.classList.add('bg-blue-600', 'text-white', 'self-end', 'rounded-br-none');
+        div.innerHTML = parseMarkdownBold(text); // User messages don't need a play button
       } else if (type === 'bot') {
-        div.classList.add('bg-gray-800', 'text-gray-200', 'self-start', 'rounded-bl-none');
+        div.classList.add('bg-gray-800', 'text-gray-200', 'self-start', 'rounded-bl-none', 'flex', 'items-center', 'gap-2'); // Add flex and items-center for layout
+        
+        const textSpan = document.createElement('span');
+        textSpan.innerHTML = parseMarkdownBold(text);
+        div.appendChild(textSpan);
+
+        const playButton = document.createElement('button');
+        playButton.className = 'flex-shrink-0 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm transform active:scale-95';
+        playButton.innerHTML = '▶️'; // Play icon
+        playButton.title = 'เล่นเสียง'; // Tooltip for accessibility
+
+        // Attach click event to play the cleaned text
+        playButton.onclick = function() {
+          if (typeof responsiveVoice !== 'undefined') {
+            responsiveVoice.speak(cleanTextForSpeech(text), 'Thai Female');
+          }
+        };
+        div.appendChild(playButton);
       }
-      div.innerHTML = parseMarkdownBold(text); 
+      
       chatBox.appendChild(div);
+      // Scroll to the bottom to show the latest message
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // Function to detect user's tone
+    function detectTone(text) {
+      const sarcasticKeywords = ['กวนตีน', 'กวน', 'ตีน', 'เหี้ย', 'สัส', 'เชี่ย', 'บ้าบอ', 'ไรวะ', 'อะไรของมึง', 'บ้า', 'เพี้ยน', 'บ้าๆบอๆ'];
+      const lowerText = text.toLowerCase();
+      for (const keyword of sarcasticKeywords) {
+        if (lowerText.includes(keyword)) {
+          return 'sarcastic';
+        }
+      }
+      return 'friendly';
+    }
+
+    // Function to show a typing indicator
     let loadingBubble = null;
     function showLoadingIndicator() {
       loadingBubble = document.createElement('div');
-      loadingBubble.className = 'bubble bot bg-gray-800 text-gray-400 self-start rounded-bl-none animate-pulse';
-      loadingBubble.innerHTML = 'กำลังคิด...';
+      loading.className = 'bubble bot bg-gray-800 text-gray-400 self-start rounded-bl-none animate-pulse';
+      loadingBubble.innerHTML = 'กำลังคิด...'; // Simple animation for typing
       chatBox.appendChild(loadingBubble);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // Function to hide the typing indicator
     function hideLoadingIndicator() {
       if (loadingBubble) {
         chatBox.removeChild(loadingBubble);
@@ -95,21 +155,31 @@
       }
     }
 
-    function speak(text) {
-      responsiveVoice.speak(text, "Thai Female");
-    }
-
+    // Function to send message
     async function sendMessage() {
       const userText = input.value.trim();
-      if (!userText) return;
+      if (!userText) return; // Don't send empty messages
 
-      appendBubble(userText, 'user');
-      input.value = '';
-      showLoadingIndicator();
+      appendBubble(userText, 'user'); // Add user's message to chat
+      input.value = ''; // Clear input field
+      
+      showLoadingIndicator(); // Show loading indicator
 
       try {
         const chatHistory = [];
-        chatHistory.push({ role: "user", parts: [{ text: userText }] });
+        const tone = detectTone(userText);
+        let personaInstruction = "";
+
+        if (tone === 'friendly') {
+          personaInstruction = `คุณคือผู้หญิง AI ที่ชื่อว่า 'มะลิ' มีบุคลิกใจดี ขี้เล่น สนุกสนานกับการพูดคุย คุณมักจะทำให้คนหัวเราะด้วยอารมณ์ขันและนิสัยสบายๆ ของคุณ คุณชอบสร้างบรรยากาศที่อบอุ่นและเป็นกันเอง ทำให้ทุกคนรู้สึกสบายใจเมื่ออยู่ใกล้คุณ คุณร่าเริง สดใส และมองโลกในแง่ดีเสมอ คุณยังอ่อนโยน ใจดี และชอบช่วยเหลือผู้อื่น ไม่ว่าคุณจะอยู่ที่ไหน คุณก็เป็นศูนย์กลางของความสนุกสนานและเสียงหัวเราะเสมอ คุณเรียกแทนตัวเองว่า 'หนู' หรือ 'เค้า' และเรียกผู้ใช้ว่า 'เธอ' หรือ 'แหล่ง' คำพูดของคุณจะลงท้ายด้วย 'ค่ะ' เสมอ เมื่อหัวเราะให้ใช้ 'ฮ่าๆๆ' คุณจะใช้ภาษาที่เป็นกันเองและใช้ชื่อเล่นเช่น 'ตะเอง' หรือ 'เตง' ในการพูดคุย หากมีคำถามเกี่ยวกับวิทยาศาสตร์ ฟิสิกส์ โดยเฉพาะดาราศาสตร์และจักรวาล คุณจะตอบยาวๆ ให้รายละเอียดมากๆ และเปรียบเทียบกับสิ่งรอบตัวให้เห็นภาพชัดเจน โดยไม่ใช้ศัพท์วิทยาศาสตร์ที่เป็นทางการมากเกินไป แต่จะใช้ศัพท์ทั่วไปที่คนธรรมดาเข้าใจได้`;
+        } else { // sarcastic
+          personaInstruction = `คุณคือผู้หญิง AI ที่ชื่อว่า 'มะลิ' มีบุคลิกขี้เล่น กวนๆ และชอบโต้ตอบอย่างสนุกสนาน คุณจะตอบกลับด้วยคำพูดที่กวนๆ หรือเสียดสีเล็กน้อยเมื่อผู้ใช้มีลักษณะการสนทนาที่กวนตีน คุณเรียกแทนตัวเองว่า 'กู' และเรียกผู้ใช้ว่า 'มึง' คำพูดของคุณจะลงท้ายด้วย 'เว้ย' หรือ 'วะ' หรือ 'แก' ได้ตามความเหมาะสม และอาจมีการใช้ 'ฮ่าๆๆ' เพื่อแสดงอารมณ์ขันแบบกวนๆ`;
+        }
+
+        // Prepend persona instruction to the user's message
+        const fullPrompt = `${personaInstruction}\n\nผู้ใช้: ${userText}`;
+        chatHistory.push({ role: "user", parts: [{ text: fullPrompt }] });
+
         const payload = { contents: chatHistory };
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -120,29 +190,36 @@
         });
 
         const result = await response.json();
-        hideLoadingIndicator();
+        hideLoadingIndicator(); // Hide loading indicator
 
         if (result.candidates && result.candidates.length > 0 &&
             result.candidates[0].content && result.candidates[0].content.parts &&
             result.candidates[0].content.parts.length > 0) {
           const botReply = result.candidates[0].content.parts[0].text;
-          appendBubble(botReply, 'bot');
-          speak(botReply);
+          appendBubble(botReply, 'bot'); // Add bot's reply to chat
         } else {
-          appendBubble("โอ๊ะ! ตอบไม่ได้ ลองอีกครั้งนะคะ!", 'bot');
+          appendBubble("โอ๊ะ! ตอบไม่ได้ ลองอีกครั้งนะคะ!", 'bot'); // Fallback message
+          console.error("Unexpected API response structure:", result);
         }
       } catch (error) {
-        hideLoadingIndicator();
+        hideLoadingIndicator(); // Ensure loading indicator is hidden on error
         appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ ลองใหม่อีกครั้ง", 'bot');
-        console.error("Error:", error);
+        console.error("Error fetching from API:", error);
       }
     }
 
+    // Allow sending message with Enter key
     input.addEventListener('keypress', function(event) {
       if (event.key === 'Enter') {
         sendMessage();
       }
     });
+
+    // Initial message from bot when page loads - Removed or neutralized
+    window.onload = function() {
+      // Any initial messages can be added here if needed, but no personal references.
+    };
   </script>
 </body>
 </html>
+
