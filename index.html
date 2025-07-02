@@ -11,49 +11,22 @@
   <!-- ResponsiveVoice JS for text-to-speech -->
   <script src="https://code.responsivevoice.org/responsivevoice.js?key=Negu9VLC"></script>
   <style>
-    /* Ensure html and body take full height and prevent main page scrolling */
-    html, body {
-      height: 100%; /* Make html and body take full viewport height */
-      overflow: hidden; /* Prevent scrolling on the entire page */
-    }
-
-    /* Custom animation for bubbles */
-    @keyframes pop {
-      0% { transform: scale(0.9); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .animate-pop {
-      animation: pop 0.3s ease-out;
-    }
-    /* Hide scrollbar for a cleaner look */
-    .hide-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .hide-scrollbar {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
-    }
-    /* Custom style for strong tags to make text slightly larger */
-    .bubble strong {
-      font-size: 1.1em; /* Makes the text 10% larger than its parent */
-      font-weight: 600; /* Ensure it's bold as well */
-    }
+    html, body { height: 100%; overflow: hidden; }
+    @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .animate-pop { animation: pop 0.3s ease-out; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .bubble strong { font-size: 1.1em; font-weight: 600; }
   </style>
 </head>
 <body class="font-inter bg-gray-950 text-gray-100 flex flex-col h-full antialiased">
-  <!-- Changed min-h-screen to h-full and added overflow:hidden to body in style -->
 
-  <!-- Header Section -->
   <header class="bg-gray-900 text-white p-4 text-2xl md:text-3xl font-extrabold text-center shadow-lg rounded-b-xl">
     <span class="text-blue-400">💬</span> Themuiz AI Chat
   </header>
 
-  <!-- Chat Box Section -->
-  <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar">
-    <!-- Initial bot message - Removed as per request -->
-  </div>
+  <div id="chat-box" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-900 rounded-xl m-4 shadow-inner hide-scrollbar"></div>
 
-  <!-- Input Area Section -->
   <div id="input-area" class="flex p-4 bg-gray-900 border-t border-gray-800 items-center gap-2 shadow-lg">
     <input
       type="text"
@@ -72,100 +45,71 @@
   <script>
     const chatBox = document.getElementById('chat-box');
     const input = document.getElementById('user-input');
-    // API Key ที่คุณให้มา
     const apiKey = "AIzaSyC5csGWz38EI5Z7gpM-Dp9WixcdldkXRnY"; 
 
-    // Function to parse Markdown bold syntax (**text** or *text*) to HTML <strong>
     function parseMarkdownBold(text) {
-      // Regex to find **text** or *text* and replace with <strong>text</strong>
-      // It handles cases where * or ** are escaped or used literally within words
-      let parsedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // For **bold**
-      parsedText = parsedText.replace(/\*(.*?)\*/g, '<strong>$1</strong>'); // For *bold*
+      let parsedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      parsedText = parsedText.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
       return parsedText;
     }
 
-    // Function to clean text for speech (remove Markdown asterisks and other special characters)
+    // แก้ไขฟังก์ชันนี้: ลบอักขระพิเศษทุกชนิด เหลือแต่ข้อความ
     function cleanTextForSpeech(text) {
       let cleanedText = text;
-      // Remove markdown bold/italic markers (**text**, *text*, _text_)
-      cleanedText = cleanedText.replace(/(\*\*|__)(.*?)\1/g, '$2'); // For **bold** or __bold__
-      cleanedText = cleanedText.replace(/(\*|_)(.*?)\1/g, '$2');   // For *italic* or _italic_ (after handling bold)
-
-      // Remove specific special characters that might be vocalized or cause issues
-      // This includes quotes, hashtags, brackets, parentheses, colons, semicolons, etc.
-      // Keep periods, commas, question marks, exclamation marks as they usually aid natural speech pauses.
-      cleanedText = cleanedText.replace(/[#"\[\]\(\):;]/g, ''); // Remove #, ", [, ], (, ), :, ;
-      cleanedText = cleanedText.replace(/'/g, ''); // Remove single quotes specifically
-
-      // Replace multiple spaces with a single space
-      cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
-
+      cleanedText = cleanedText.replace(/(\*\*|__)(.*?)\1/g, '$2'); // bold
+      cleanedText = cleanedText.replace(/(\*|_)(.*?)\1/g, '$2'); // italic
+      cleanedText = cleanedText.replace(/[#"\[\]\(\):;.,\/\\'?!@#$%^&*+=~`<>|{}\[\]]/g, ''); // ลบอักขระพิเศษทุกชนิด
+      cleanedText = cleanedText.replace(/\s+/g, ' ').trim(); // เว้นวรรคเดียว
       return cleanedText;
     }
 
-    // Function to append chat bubbles
     function appendBubble(text, type) {
       const div = document.createElement('div');
       div.className = `bubble ${type} p-3 rounded-xl max-w-[80%] break-words shadow-md animate-pop`;
-      
       if (type === 'user') {
         div.classList.add('bg-blue-600', 'text-white', 'self-end', 'rounded-br-none');
-        div.innerHTML = parseMarkdownBold(text); // User messages don't need a play button
+        div.innerHTML = parseMarkdownBold(text);
       } else if (type === 'bot') {
-        div.classList.add('bg-gray-800', 'text-gray-200', 'self-start', 'rounded-bl-none', 'flex', 'flex-col', 'items-start', 'gap-2'); // Added flex-col and items-start for stacked content
-        
+        div.classList.add('bg-gray-800', 'text-gray-200', 'self-start', 'rounded-bl-none', 'flex', 'flex-col', 'items-start', 'gap-2');
         const textSpan = document.createElement('span');
         textSpan.innerHTML = parseMarkdownBold(text);
         div.appendChild(textSpan);
 
-        // Container for play and copy buttons
         const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'flex gap-2 mt-2'; // Add margin top for spacing
+        buttonContainer.className = 'flex gap-2 mt-2';
 
         const playButton = document.createElement('button');
         playButton.className = 'flex-shrink-0 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm';
-        playButton.innerHTML = '▶️ เล่นเสียง'; // Play icon and text
-        playButton.title = 'เล่นเสียง'; // Tooltip for accessibility
-
-        // Attach click event to play the text
+        playButton.innerHTML = '▶️ เล่นเสียง';
+        playButton.title = 'เล่นเสียง';
         playButton.onclick = function() {
           const originalButtonText = playButton.innerHTML;
-          // Check if responsiveVoice is loaded and not currently speaking
           if (typeof responsiveVoice !== 'undefined' && !responsiveVoice.isPlaying()) {
-            playButton.innerHTML = '🔊 กำลังเล่น...'; // Show playing status
+            playButton.innerHTML = '🔊 กำลังเล่น...';
             responsiveVoice.speak(cleanTextForSpeech(text), 'Thai Female', {
-                onend: function() {
-                    playButton.innerHTML = originalButtonText; // Reset button text when speech ends
-                },
+                onend: function() { playButton.innerHTML = originalButtonText; },
                 onerror: function(e) {
                     console.error("ResponsiveVoice error:", e);
-                    playButton.innerHTML = '❌ เล่นไม่ได้'; // Show error status
-                    setTimeout(() => {
-                        playButton.innerHTML = originalButtonText;
-                    }, 2000); // Reset after 2 seconds
+                    playButton.innerHTML = '❌ เล่นไม่ได้';
+                    setTimeout(() => { playButton.innerHTML = originalButtonText; }, 2000);
                 }
             });
           } else if (typeof responsiveVoice !== 'undefined' && responsiveVoice.isPlaying()) {
             console.log("ResponsiveVoice is already speaking. Please wait.");
-            // No change to button text, as it's already playing something.
           } else {
             console.warn("ResponsiveVoice library not loaded or not ready.");
-            playButton.innerHTML = '⚠️ ไม่พร้อม'; // Show not ready status
-            setTimeout(() => {
-                playButton.innerHTML = originalButtonText;
-            }, 2000); // Reset after 2 seconds
+            playButton.innerHTML = '⚠️ ไม่พร้อม';
+            setTimeout(() => { playButton.innerHTML = originalButtonText; }, 2000);
           }
         };
         buttonContainer.appendChild(playButton);
 
         const copyButton = document.createElement('button');
         copyButton.className = 'flex-shrink-0 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-xs px-2 py-1 rounded-full cursor-pointer transition-colors duration-200 shadow-sm';
-        copyButton.innerHTML = '📋 คัดลอก'; // Copy icon and text
-        copyButton.title = 'คัดลอกข้อความ'; // Tooltip for accessibility
-
-        // Attach click event to copy the text
+        copyButton.innerHTML = '📋 คัดลอก';
+        copyButton.title = 'คัดลอกข้อความ';
         copyButton.onclick = function() {
-          const textToCopy = cleanTextForSpeech(text); // Use cleaned text for copying
+          const textToCopy = cleanTextForSpeech(text);
           const tempTextArea = document.createElement('textarea');
           tempTextArea.value = textToCopy;
           document.body.appendChild(tempTextArea);
@@ -174,37 +118,27 @@
             document.execCommand('copy');
             const originalButtonText = copyButton.innerHTML;
             copyButton.innerHTML = '✅ คัดลอกแล้ว!';
-            setTimeout(() => {
-              copyButton.innerHTML = originalButtonText;
-            }, 2000); // Change back after 2 seconds
-          } catch (err) {
-            console.error('Failed to copy text: ', err);
-            // Fallback for older browsers or restricted environments
-            // You might want to show a message to the user that copying failed
-          }
+            setTimeout(() => { copyButton.innerHTML = originalButtonText; }, 2000);
+          } catch (err) { console.error('Failed to copy text: ', err); }
           document.body.removeChild(tempTextArea);
         };
         buttonContainer.appendChild(copyButton);
 
-        div.appendChild(buttonContainer); // Append the button container to the bot bubble
+        div.appendChild(buttonContainer);
       }
-      
       chatBox.appendChild(div);
-      // Scroll to the bottom to show the latest message
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Function to show a typing indicator
     let loadingBubble = null;
     function showLoadingIndicator() {
       loadingBubble = document.createElement('div');
       loadingBubble.className = 'bubble bot bg-gray-800 text-gray-400 self-start rounded-bl-none animate-pulse p-3 shadow-md';
-      loadingBubble.innerHTML = 'กำลังคิด...'; // Simple animation for typing
+      loadingBubble.innerHTML = 'กำลังคิด...';
       chatBox.appendChild(loadingBubble);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Function to hide the typing indicator
     function hideLoadingIndicator() {
       if (loadingBubble) {
         chatBox.removeChild(loadingBubble);
@@ -212,25 +146,17 @@
       }
     }
 
-    // Function to send message
     async function sendMessage() {
       const userText = input.value.trim();
-      if (!userText) return; // Don't send empty messages
-
-      appendBubble(userText, 'user'); // Add user's message to chat
-      input.value = ''; // Clear input field
-      
-      showLoadingIndicator(); // Show loading indicator
-
+      if (!userText) return;
+      appendBubble(userText, 'user');
+      input.value = '';
+      showLoadingIndicator();
       try {
-        const chatHistory = []; 
-        // Set a simple persona instruction: female AI named 'มุ่ย'
+        const chatHistory = [];
         const personaInstruction = `คุณคือ AI ผู้หญิงที่มีชื่อว่า 'มุ่ย'`;
-
-        // Prepend persona instruction to the user's message
         const fullPrompt = `${personaInstruction}\n\nผู้ใช้: ${userText}`;
         chatHistory.push({ role: "user", parts: [{ text: fullPrompt }] });
-
         const payload = { contents: chatHistory };
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -241,47 +167,35 @@
         });
 
         const result = await response.json();
-        
-        hideLoadingIndicator(); // Hide loading indicator
-
+        hideLoadingIndicator();
         if (result.candidates && result.candidates.length > 0 &&
             result.candidates[0].content && result.candidates[0].content.parts &&
             result.candidates[0].content.parts.length > 0) {
           const botReply = result.candidates[0].content.parts[0].text;
-          appendBubble(botReply, 'bot'); // Add bot's reply to chat
+          appendBubble(botReply, 'bot');
         } else {
           appendBubble("ขออภัยค่ะ ไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้งค่ะ", 'bot');
           console.error("Unexpected API response structure:", result);
         }
       } catch (error) {
-        hideLoadingIndicator(); // Ensure loading indicator is hidden on error
+        hideLoadingIndicator();
         appendBubble("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรือ API Key แล้วลองใหม่อีกครั้งค่ะ", 'bot');
         console.error("Error fetching from API:", error);
       }
     }
 
-    // Allow sending message with Enter key
     input.addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') {
-        sendMessage();
-      }
+      if (event.key === 'Enter') sendMessage();
     });
 
-    // Ensure ResponsiveVoice is fully loaded and ready before use
     window.onload = function() {
-        if (typeof responsiveVoice !== 'undefined') {
-            // Assign a function to responsiveVoice.OnLoad to be executed when the library is ready
-            responsiveVoice.OnLoad = function() {
-                console.log("ResponsiveVoice library is fully loaded and ready.");
-                // Speak an empty string silently to pre-load the voice data for 'Thai Female' voice.
-                // This often helps reduce the delay for the first actual speech.
-                responsiveVoice.speak("", "Thai Female"); 
-            };
-        } else {
-            console.error("ResponsiveVoice.js script not detected. Text-to-speech may not work.");
-            // Optionally, inform the user directly in the chat or UI if the script fails to load
-            // appendBubble("ขออภัยค่ะ ฟังก์ชันเล่นเสียงไม่พร้อมใช้งาน", 'bot');
-        }
+      if (typeof responsiveVoice !== 'undefined') {
+        responsiveVoice.OnLoad = function() {
+          responsiveVoice.speak("", "Thai Female");
+        };
+      } else {
+        console.error("ResponsiveVoice.js script not detected. Text-to-speech may not work.");
+      }
     };
   </script>
 </body>
